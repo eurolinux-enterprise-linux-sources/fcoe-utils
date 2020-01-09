@@ -1,0 +1,32 @@
+From 926750935d4bfe55dccddcbd377588f3a99f28be Mon Sep 17 00:00:00 2001
+From: Chris Leech <cleech@redhat.com>
+Date: Wed, 17 Sep 2014 06:03:16 +0000
+Subject: [PATCH] fcoeadm: display strings for new port speeds
+
+Signed-off-by: Chris Leech <cleech@redhat.com>
+Signed-off-by: Vasu Dev <vasu.dev@intel.com>
+---
+ fcoeadm_display.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/fcoeadm_display.c b/fcoeadm_display.c
+index 9b96aa7..9b96170 100644
+--- a/fcoeadm_display.c
++++ b/fcoeadm_display.c
+@@ -110,7 +110,13 @@ struct sa_nameval port_speeds[] = {
+ 	{ "Unknown",        HBA_PORTSPEED_UNKNOWN },
+ 	{ "1 Gbit",         HBA_PORTSPEED_1GBIT },
+ 	{ "2 Gbit",         HBA_PORTSPEED_2GBIT },
++	{ "4 Gbit",         HBA_PORTSPEED_4GBIT },
+ 	{ "10 Gbit",        HBA_PORTSPEED_10GBIT },
++	{ "8 Gbit",         HBA_PORTSPEED_8GBIT },
++	{ "16 Gbit",        HBA_PORTSPEED_16GBIT },
++	{ "32 Gbit",        HBA_PORTSPEED_32GBIT },
++	{ "20 Gbit",        HBA_PORTSPEED_20GBIT },
++	{ "40 Gbit",        HBA_PORTSPEED_40GBIT },
+ 	{ "Not Negotiated", HBA_PORTSPEED_NOT_NEGOTIATED },
+ 	{ NULL, 0 }
+ };
+-- 
+2.5.0
+

@@ -1,0 +1,50 @@
+From 898a4bb715e97542a51ee3e04a3750b00bb0efcb Mon Sep 17 00:00:00 2001
+From: Chris Leech <cleech@redhat.com>
+Date: Thu, 17 Dec 2015 17:11:48 -0800
+Subject: [PATCH] add MINIMUM_WAIT to /etc/fcoe/config as a workaround for
+ delays needed before LVM volume scans
+
+---
+ etc/config             | 11 +++++++++++
+ etc/initd/initd.fedora |  6 ++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/etc/config b/etc/config
+index bfccf8c..088a6ec 100644
+--- a/etc/config
++++ b/etc/config
+@@ -17,3 +17,14 @@ SUPPORTED_DRIVERS="fcoe bnx2fc"
+ ## Default:    65
+ # Wait at most for this amount of seconds to discover all _netdev fstab devices
+ WAIT_TIMEOUT="65"
++
++## Type:       integer
++## Default:    0
++# Add an additional minimum wait time to WAIT_TIMEOUT.
++#
++# This can be useful if the FCoE device is not listed by path in /etc/fstab
++# (ie. /dev/by-path/fc-*) but LVM volumes on the FCoE device are.
++# The fcoe service does not know what devices will be attached, but we need a
++# delay for them to be ready before LVM volume scanning.  Increasing this can
++# help if mounts of LVM logical volumes on FCoE devices are failing at startup.
++MINIMUM_WAIT="0"
+diff --git a/etc/initd/initd.fedora b/etc/initd/initd.fedora
+index 0e4a2a4..318f984 100755
+--- a/etc/initd/initd.fedora
++++ b/etc/initd/initd.fedora
+@@ -113,6 +113,12 @@ start()
+ 				echo "done!"
+ 			fi
+ 		fi
++		if [ "$MINIMUM_WAIT" = "" ]; then
++			MINIMUM_WAIT=0
++		fi
++		if [ $MINIMUM_WAIT -ne 0 ]; then
++			sleep $MINIMUM_WAIT
++		fi
+ 		echo
+ 	else
+ 		echo "(already running)"
+-- 
+2.5.0
+

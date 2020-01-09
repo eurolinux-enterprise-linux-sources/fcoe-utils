@@ -1,6 +1,6 @@
 Name:           fcoe-utils
 Version:        1.0.28
-Release:        3%{?dist}
+Release:        5%{?dist}
 Summary:        Fibre Channel over Ethernet utilities
 Group:          Applications/System
 License:        GPLv2
@@ -19,14 +19,16 @@ Patch5:         fcoe-utils-1.0.28-ll-literal-constants.patch
 Patch6:         fcoe-utils-1.0.28-readme.patch
 Patch7:         fcoe-utils-1.0.28-struct-len.patch
 Patch8:         fcoe-utils-1.0.28-fcf-man.patch
+Patch9:         fcoe-utils-v1.0.29-29-fcoeadm-display-strings-for-new-port-speeds.patch
+Patch10:        fcoe-utils-1.0.28-init-min-wait.patch
 
 BuildRequires:      libtool automake autoconf
 BuildRequires:      lldpad-devel >= 0.9.43
-BuildRequires:      libhbaapi-devel >= 2.2-11
-BuildRequires:      libhbalinux-devel >= 1.0.13
+BuildRequires:      libhbaapi-devel >= 2.2.9-2
+BuildRequires:      libhbalinux-devel >= 1.0.17
 BuildRequires:      libnl-devel
 Requires:           lldpad >= 0.9.43
-Requires:           libhbalinux >= 1.0.13
+Requires:           libhbalinux >= 1.0.17
 Requires:           iproute
 Requires:           device-mapper-multipath
 
@@ -52,6 +54,8 @@ lldpad
 %patch6 -p1 -b .readme
 %patch7 -p1 -b .struct-len
 %patch8 -p1
+%patch9 -p1 -b .portspeed
+%patch10 -p1 -b .init-wait
 
 %build
 ./bootstrap.sh
@@ -121,6 +125,12 @@ fi
 
 
 %changelog
+* Fri Dec 18 2015 Chris Leech <cleech@redhat.com> - 1.0.28-5
+- 980961 add MINIMUM_WAIT to config as a workaround to delay before LVM scans
+
+* Thu Dec 17 2015 Chris Leech <cleech@redhat.com> - 1.0.28-4
+- 1074125 add display string for new portspeed definitions
+
 * Tue Oct 15 2013 Petr Šabata <contyk@redhat.com> - 1.0.28-3
 - Correct the references to the fcoeadm --fcf option in manpages
 

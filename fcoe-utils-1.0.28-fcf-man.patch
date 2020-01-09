@@ -1,0 +1,44 @@
+diff --git a/doc/fcoeadm.8 b/doc/fcoeadm.8
+index 11da6e3..3962e27 100644
+--- a/doc/fcoeadm.8
++++ b/doc/fcoeadm.8
+@@ -39,7 +39,7 @@ fcoeadm \- The Open\-FCoE Administration Tool
+ .sp
+ \fBfcoeadm\fR \-i|\-\-interface [\fIethX\fR]
+ .sp
+-\fBfcoeadm\fR \-f|\-\-fcfs [\fIethX\fR]
++\fBfcoeadm\fR \-f|\-\-fcf [\fIethX\fR]
+ .sp
+ \fBfcoeadm\fR \-t|\-\-target [\fIethX\fR]
+ .sp
+@@ -91,7 +91,7 @@ Rescan for new targets and LUNs on the provided instance\&. This command will no
+ Show information about the FCoE instance on the specified network interface, or all FCoE instances if no network interface is specified\&.
+ .RE
+ .PP
+-\fB\-f\fR, \fB\-\-fcfs\fR [\fIethX\fR]
++\fB\-f\fR, \fB\-\-fcf\fR [\fIethX\fR]
+ .RS 4
+ Show information about the discovered Fibre Channel Forwarders (FCFs) on the specified network interface, or all discovered FCFs if no network interface is specified\&.
+ .RE
+diff --git a/doc/fcoeadm.txt b/doc/fcoeadm.txt
+index 788625c..28ed482 100644
+--- a/doc/fcoeadm.txt
++++ b/doc/fcoeadm.txt
+@@ -29,7 +29,7 @@ SYNOPSIS
+ 
+ *fcoeadm* -i|--interface [_ethX_]
+ 
+-*fcoeadm* -f|--fcfs [_ethX_]
++*fcoeadm* -f|--fcf [_ethX_]
+ 
+ *fcoeadm* -t|--target [_ethX_]
+ 
+@@ -89,7 +89,7 @@ OPERATIONS
+ 	Show information about the FCoE instance on the specified network
+ 	interface, or all FCoE instances if no network interface is specified.
+ 
+-*-f*, *--fcfs* [_ethX_]::
++*-f*, *--fcf* [_ethX_]::
+ 	Show information about the discovered Fibre Channel Forwarders (FCFs)
+ 	on the specified network interface, or all discovered FCFs if no
+ 	network interface is specified.

@@ -1,21 +1,24 @@
 Name:           fcoe-utils
-Version:        1.0.24
-Release:        2%{?dist}
+Version:        1.0.28
+Release:        3%{?dist}
 Summary:        Fibre Channel over Ethernet utilities
 Group:          Applications/System
 License:        GPLv2
 URL:            http://www.open-fcoe.org
 # Source is a git snapshot, git://open-fcoe.org/fcoe/fcoe-utils.git
-Source0:        %{name}-%{version}.tar.bz2
+Source0:        %{name}-%{version}.tar.gz
 Source1:        quickstart.txt
-ExcludeArch:    s390 ppc
+ExcludeArch:    s390 s390x ppc
 # General
-Patch0:         fcoe-utils-1.0.22-init.patch
-Patch1:         fcoe-utils-1.0.20-make.patch
+Patch0:         fcoe-utils-1.0.28-init.patch
+Patch1:         fcoe-utils-1.0.28-make.patch
 Patch2:         fcoe-utils-1.0.18-help.patch
 Patch3:         fcoe-utils-1.0.18-config.patch
-# rhbz#867117
-Patch4:         fcoe-utils-1.0.24-fixes-misleading-operations-and-prints-while-DCB-not-ready.patch
+Patch4:         fcoe-utils-1.0.28-format-strings.patch
+Patch5:         fcoe-utils-1.0.28-ll-literal-constants.patch
+Patch6:         fcoe-utils-1.0.28-readme.patch
+Patch7:         fcoe-utils-1.0.28-struct-len.patch
+Patch8:         fcoe-utils-1.0.28-fcf-man.patch
 
 BuildRequires:      libtool automake autoconf
 BuildRequires:      lldpad-devel >= 0.9.43
@@ -44,7 +47,11 @@ lldpad
 %patch1 -p1 -b .make
 %patch2 -p1 -b .help
 %patch3 -p1 -b .config
-%patch4 -p1
+%patch4 -p1 -b .format-strings
+%patch5 -p1 -b .ll
+%patch6 -p1 -b .readme
+%patch7 -p1 -b .struct-len
+%patch8 -p1
 
 %build
 ./bootstrap.sh
@@ -114,6 +121,20 @@ fi
 
 
 %changelog
+* Tue Oct 15 2013 Petr Šabata <contyk@redhat.com> - 1.0.28-3
+- Correct the references to the fcoeadm --fcf option in manpages
+
+* Wed Aug 14 2013 Petr Šabata <contyk@redhat.com> - 1.0.28-2
+- Don't build on s390x (#693443)
+- Add a note to README about EL6 service already implementing the
+  suggested function (#981062)
+- Use rtgenmsg when requesting RTM_GETLINK (#882139)
+
+* Thu Jun 20 2013 Petr Šabata <contyk@redhat.com> - 1.0.28-1
+- Update to 1.0.28 (#829793)
+- Include a fix for #903099, destroying vports first to avoid a hang
+- Fix an old bogus date in the changelog
+
 * Thu Dec 06 2012 Petr Šabata <contyk@redhat.com> - 1.0.24-2
 - Fix fcoemon behavior with DCB unavailable (#867117, patchwork 2810)
 
@@ -311,7 +332,7 @@ fi
 * Mon May 4 2009 Jan Zeleny <jzeleny@redhat.com> - 1.0.7-5
 - fixed SIGSEGV when fcoe module isn't loaded (#498550)
 
-* Wed Apr 27 2009 Jan Zeleny <jzeleny@redhat.com> - 1.0.7-4
+* Mon Apr 27 2009 Jan Zeleny <jzeleny@redhat.com> - 1.0.7-4
 - added libhbalinux to Requires (#497605)
 - correction of spec file (_initddir -> _initrddir)
 

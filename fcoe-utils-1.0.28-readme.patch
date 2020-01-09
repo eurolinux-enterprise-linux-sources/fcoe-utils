@@ -1,0 +1,14 @@
+diff --git a/README b/README
+index 5f4f4ae..f18d242 100644
+--- a/README
++++ b/README
+@@ -16,6 +16,9 @@ build the libraries.
+ 
+ Best Practices :
+ 
++NOTE: The following is already a part of the `fcoe' service
++      in Red Hat Enterprise Linux 6.
++
+ Any newly discovered disk can be mounted using udev rules, autofs and possibly by
+ other methods as needed. However, if a fcoe disk is needed by any other system service
+ that follows the fcoe service then the disk will need to be mounted at some point

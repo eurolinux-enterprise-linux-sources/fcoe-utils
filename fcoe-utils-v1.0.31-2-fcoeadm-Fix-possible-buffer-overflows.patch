@@ -1,0 +1,45 @@
+From 5dfd3e4fab6cc4261112ad6a6839d4eb584cacfc Mon Sep 17 00:00:00 2001
+From: Johannes Thumshirn <jthumshirn@suse.de>
+Date: Wed, 15 Jun 2016 22:47:41 +0000
+Subject: [PATCH] fcoeadm: Fix possible buffer overflows
+
+Fix 3 possible buffer overflows when strncat()ing strings together.
+
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Signed-off-by: Vasu Dev <vasu.dev@intel.com>
+---
+ fcoeadm_display.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fcoeadm_display.c b/fcoeadm_display.c
+index 16ccb6b..7b95aa4 100644
+--- a/fcoeadm_display.c
++++ b/fcoeadm_display.c
+@@ -267,13 +267,13 @@ static void show_full_lun_info(unsigned int hba, unsigned int port,
+ 	if (!port_attrs)
+ 		goto free_rport;
+ 
+-	strncat(path, "/device/", sizeof(path));
++	strncat(path, "/device/", sizeof(path) - strlen(path) - 1);
+ 
+ 	sa_sys_read_line(path, "rev", rev, sizeof(rev));
+ 	sa_sys_read_line(path, "model", model, sizeof(model));
+ 	sa_sys_read_line(path, "vendor", vendor, sizeof(vendor));
+ 
+-	strncat(path, "block", sizeof(path));
++	strncat(path, "block", sizeof(path) - strlen(path) - 1);
+ 
+ 	dir = opendir(path);
+ 	if (!dir)
+@@ -349,7 +349,7 @@ static void show_short_lun_info(unsigned int hba, unsigned int port,
+ 	sa_sys_read_line(path, "model", model, sizeof(model));
+ 	sa_sys_read_line(path, "vendor", vendor, sizeof(vendor));
+ 
+-	strncat(path, "block", sizeof(path));
++	strncat(path, "block", sizeof(path) - strlen(path) - 1);
+ 
+ 	dir = opendir(path);
+ 	if (!dir)
+-- 
+2.5.5
+

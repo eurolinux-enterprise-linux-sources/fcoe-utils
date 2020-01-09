@@ -1,0 +1,21 @@
+			     FCoE Management Tools
+			     =====================
+
+The FCoE Management Tools included in this package are
+
+  fcoeadm - program to create, reset, destroy, and display FCoE interfaces
+  fcoemon - program to monitor the events from the DCB daemon
+
+Requirements:
+
+The HBAAPI library and the HBAAPI vendor library are required for the
+management tools.  They should be installed as dependancies of the fcoe-utils
+RPM, and are provided by the libhbaapi and libhbalinux RPMs.
+
+Best Practices :
+
+The FCoE systemd services should be properly ordered against networking and
+filesystem units.  But, in order to work properly any filesystems that reside
+on FCoE attached storage should have the _netdev flag set in the mount options
+field of their /etc/fstab entry.
+

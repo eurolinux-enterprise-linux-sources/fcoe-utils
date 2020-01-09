@@ -1,34 +1,35 @@
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Compiler_flags
 %define _hardened_build 1
 
-%global checkout 91c0c8c
+%global checkout 5dfd3e4
 
 Name:               fcoe-utils
-Version:            1.0.30
-Release:            3.git%{checkout}%{?dist}
+Version:            1.0.31
+Release:            1.git%{checkout}%{?dist}
 Summary:            Fibre Channel over Ethernet utilities
 Group:              Applications/System
 License:            GPLv2
 URL:                http://www.open-fcoe.org
 # git://open-fcoe.org/fcoe/fcoe-utils.git
-Source0:            %{name}-%{version}.tar.gz
+Source0:            https://github.com/morbidrsa/fcoe-utils/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:            quickstart.txt
 Source2:            fcoe.service
 Source3:            fcoe.config
+Source4:            README.redhat
 ExcludeArch:        ppc s390
-Patch1:             fcoe-utils-v1.0.30-1-fcoemon-Rework-daemonizing-and-error-handling.patch
-Patch2:             fcoe-utils-v1.0.30-2-fcoemon-fix-IEEE-state-machine.patch
+Patch1:             fcoe-utils-v1.0.31-1-fcoemon.c-Add-a-check-to-verify-if-dcbd-is-to-be-ini.patch
+Patch2:             fcoe-utils-v1.0.31-2-fcoeadm-Fix-possible-buffer-overflows.patch
 Patch3:             fcoe-utils-v1.0.30-3-sanmac-isn-t-required.patch
-Patch4:             fcoe-utils-v1.0.30-fcoeadm-fix-display-when-some-netdevs-don-t-have-ser.patch
 BuildRequires:      autoconf
 BuildRequires:      automake
-BuildRequires:      libhbaapi-devel >= 2.2.9-6
-BuildRequires:      libhbalinux-devel >= 1.0.17-1
+BuildRequires:      libpciaccess-devel
+#BuildRequires:      libhbaapi-devel >= 2.2.9-6
+#BuildRequires:      libhbalinux-devel >= 1.0.17-1
 BuildRequires:      libtool
 BuildRequires:      lldpad-devel >= 0.9.43
 BuildRequires:      systemd
 Requires:           lldpad >= 0.9.43
-Requires:           libhbalinux >= 1.0.16-4
+#Requires:           libhbalinux >= 1.0.16-4
 Requires:           iproute
 Requires:           device-mapper-multipath
 Requires(post):     systemd
@@ -44,6 +45,7 @@ fcoemon - service to configure DCB Ethernet QOS filters, works with lldpad
 %autosetup -p1
 
 cp -v %{SOURCE1} quickstart.txt
+cp -v %{SOURCE4} README.redhat
 
 %build
 ./bootstrap.sh
@@ -81,7 +83,7 @@ sed -i -e 's/SUPPORTED_DRIVERS="libfc fcoe bnx2fc"/SUPPORTED_DRIVERS="libfc fcoe
 %systemd_postun_with_restart fcoe.service
 
 %files
-%doc README COPYING QUICKSTART quickstart.txt
+%doc README.redhat COPYING QUICKSTART quickstart.txt
 %{_sbindir}/*
 %{_mandir}/man8/*
 %{_unitdir}/fcoe.service
@@ -92,7 +94,17 @@ sed -i -e 's/SUPPORTED_DRIVERS="libfc fcoe bnx2fc"/SUPPORTED_DRIVERS="libfc fcoe
 %{_libexecdir}/fcoe/
 
 %changelog
-* Mon Jul 06 2015 Chris Leech <cleech@redhat.com> - 1.0.30-3.git%{?dist}
+* Fri Aug 19 2016 Chris Leech <cleech@redhat.com> - 1.0.31-1.git5dfd3e4
+- 1274530 rebase to upstream 1.0.31+
+- no longer requires libhbaapi/libhbalinux
+- no longer attempts to connect to lldpad if DC_REQUIRED is configured off
+  for all interfaces
+
+* Wed Jul 06 2016 Chris Leech <cleech@redhat.com> - 1.0.30-4.git91c0c8c
+- 1039779 replace README that contained mostly build instructions with
+  README.redhat containing better distro-specific information
+
+* Mon Jul 06 2015 Chris Leech <cleech@redhat.com> - 1.0.30-3.git91c0c8c
 - 1056367 remove s390x from ExcludeArch
 
 * Mon Jul 06 2015 Chris Leech <cleech@redhat.com> - 1.0.30-2.git91c0c8c

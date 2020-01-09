@@ -1,6 +1,6 @@
 Name:           fcoe-utils
 Version:        1.0.28
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Fibre Channel over Ethernet utilities
 Group:          Applications/System
 License:        GPLv2
@@ -21,6 +21,7 @@ Patch7:         fcoe-utils-1.0.28-struct-len.patch
 Patch8:         fcoe-utils-1.0.28-fcf-man.patch
 Patch9:         fcoe-utils-v1.0.29-29-fcoeadm-display-strings-for-new-port-speeds.patch
 Patch10:        fcoe-utils-1.0.28-init-min-wait.patch
+Patch11: 	fcoemon.c-Add-a-check-to-verify-if-dcbd-is-to-be-ini.patch
 
 BuildRequires:      libtool automake autoconf
 BuildRequires:      lldpad-devel >= 0.9.43
@@ -56,6 +57,7 @@ lldpad
 %patch8 -p1
 %patch9 -p1 -b .portspeed
 %patch10 -p1 -b .init-wait
+%patch11 -p1 -b .lldpad
 
 %build
 ./bootstrap.sh
@@ -125,6 +127,9 @@ fi
 
 
 %changelog
+* Fri Jan 13 2017 Chris Leech <cleech@redhat.com> - 1.0.28-6
+- 1321594 only try to connect to lldpad if needed
+
 * Fri Dec 18 2015 Chris Leech <cleech@redhat.com> - 1.0.28-5
 - 980961 add MINIMUM_WAIT to config as a workaround to delay before LVM scans
 

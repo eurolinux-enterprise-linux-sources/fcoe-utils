@@ -1,0 +1,153 @@
+diff --git a/etc/initd/initd.fedora b/etc/initd/initd.fedora
+index 41ba193..06858d5 100755
+--- a/etc/initd/initd.fedora
++++ b/etc/initd/initd.fedora
+@@ -15,7 +15,7 @@
+ # this program; if not, write to the Free Software Foundation, Inc.,
+ # 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+ #
+-# chkconfig: - 21 80
++# chkconfig: 2345 21 80
+ #
+ # Maintained at www.Open-FCoE.org
+ 
+@@ -23,7 +23,7 @@
+ # Provides: fcoe
+ # Required-Start: network
+ # Required-Stop:
+-# Default-Start:
++# Default-Start: 2 3 4 5
+ # Default-Stop:
+ # Short-Description: Open-FCoE Initiator
+ # Description: Open-FCoE Initiator
+@@ -64,6 +64,16 @@ test -x $FCOEMON || {
+ 	fi
+ }
+ 
++have_fcoe_root() {
++	# This simply checks if root is on a net device
++	local rootopts=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $4; }}' /etc/mtab)
++	if [[ "$rootopts" =~ "_netdev" ]]; then
++		return 0
++	else
++		return 1
++	fi
++}
++
+ start()
+ {
+ 	echo -n $"Starting FCoE initiator service: "
+@@ -76,47 +86,92 @@ start()
+ 	echo
+ 	touch ${LOCKFILE}
+ 
++	# Wait for the _netdev devices
++	if [ "$WAIT_TIMEOUT" = "" ]; then
++		WAIT_TIMEOUT=65
++	fi
++	local donewait=1
++	local devs=($(egrep 'by-path\/fc-.*_netdev' /etc/fstab | cut -d ' ' -f1))
++	if [ "$devs" != "" ]; then
++		echo -n "Waiting for FCoE devices . "
++		while [ $WAIT_TIMEOUT -gt 0 ]; do
++			for disk in ${devs[*]}; do
++				if ! test -b $disk; then
++					donewait=0
++					break
++				fi
++			done
++			test $donewait -eq 1 && break;
++			sleep 1
++			echo -n ". "
++			donewait=1
++			WAIT_TIMEOUT=$(($WAIT_TIMEOUT-1))
++		done
++		if [ "$WAIT_TIMEOUT" -eq 0 ]; then
++			echo "timed out!"
++		else
++			echo "done!"
++		fi
++	fi
++
+ 	echo
+ }
+ 
+ stop()
+ {
+-	local force=$1
+-
+-	pid=$(pidof "$FCOEMON")
+-	if [ "$force" == "force" ]
+-	then
+-		action "Destroying any active fcoe interface/s"
+-		[ "$pid" ] && kill -HUP $pid
+-		modprobe -r $SUPPORTED_DRIVERS libfc
++	if have_fcoe_root; then
++		echo $"Possible FCoE root detected, not stopping FCoE."
++		exit 1
+ 	else
+-		[ "$pid" ] && kill -TERM $pid
++		local force=$1
++		pid=$(pidof "$FCOEMON")
++		if [ "$force" == "force" ]
++		then
++			action "Destroying any active fcoe interface/s"
++			[ "$pid" ] && kill -HUP $pid
++			sleep 3
++			for iface in $(fcoeadm -i | grep -F 'Symbolic Name:' | \
++				sed 's/^.*over \([^\s]*\)$/\1/'); do
++				echo $iface >/sys/module/libfcoe/parameters/destroy
++			done
++			sleep 3
++			modprobe -r -a $SUPPORTED_DRIVERS libfc
++		else
++			[ "$pid" ] && kill -TERM $pid
++		fi
++		action $"Stopping FCoE initiator service: "
++		rm -f ${PID_FILE}
++		rm -f ${LOCKFILE}
+ 	fi
+-
+-	action $"Stopping FCoE initiator service: "
+-
+-	rm -f ${PID_FILE}
+-	rm -f ${LOCKFILE}
+ }
+ 
+ status()
+ {
+-	[ -f ${LOCKFILE} ] || { echo "$FCOEMON is stopped" ; return 3; }
+-
+ 	status=0
+-	echo "$FCOEMON is running, pid=`cat $PID_FILE`"
++	pidof $FCOEMON
++	if [ $? -eq 0 ]; then
++		echo "$FCOEMON -- RUNNING, pid=`cat $PID_FILE`"
++	else
++		echo "$FCOEMON -- UNUSED"
++		status=3
++	fi
+ 
+ 	interfaces=`$FCOEADM -i 2>&1 | \
+-		    awk '/Symbolic Name:/{print $6}' | \
+-		    sort | awk '{printf("%s ", $1)}'`
++		awk '/Symbolic Name:/{print $6}' | \
++		sort | awk '{printf("%s ", $1)}'`
+ 
+ 	if [ -z "$interfaces" ]; then
+ 		echo "No interfaces created."
+-		status=2
+ 	else
+ 		echo "Created interfaces: $interfaces"
++		status=0
++	fi
++	if [ -f $LOCKFILE -a $status -eq 3 ]; then
++		status=2
++	fi
++	if [ -f ${PID_FILE} -a $status -eq 3 ]; then
++		status=1
+ 	fi
+-
+ 	return $status
+ }
+ 

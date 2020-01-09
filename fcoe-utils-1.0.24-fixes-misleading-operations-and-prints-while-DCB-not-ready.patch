@@ -1,0 +1,220 @@
+diff --git a/fcoeadm.c b/fcoeadm.c
+index 1685a42..729d2e7 100644
+--- a/fcoeadm.c
++++ b/fcoeadm.c
+@@ -417,6 +417,10 @@ err:
+ 			FCOE_LOG_ERR("Connection to fcoemon timed out\n");
+ 			break;
+ 
++		case EDCBNOTRDY:
++			FCOE_LOG_ERR("DCB not ready on the DCB required i/f\n");
++			break;
++
+ 		case EHBAAPIERR:
+ 			FCOE_LOG_ERR("libHBAAPI or libhbalinux error\n");
+ 			break;
+diff --git a/fcoemon.c b/fcoemon.c
+index 73939a4..ff3686e 100644
+--- a/fcoemon.c
++++ b/fcoemon.c
+@@ -151,7 +151,7 @@ static void fcm_dcbd_rx(void *);
+ static void fcm_dcbd_event(char *, size_t);
+ static void fcm_dcbd_cmd_resp(char *, cmd_status);
+ static void fcm_netif_advance(struct fcm_netif *);
+-static void fcm_fcoe_action(struct fcm_netif *, struct fcoe_port *);
++static int fcm_fcoe_action(struct fcm_netif *, struct fcoe_port *);
+ static void fcp_set_next_action(struct fcoe_port *, enum fcp_action);
+ static enum fcoe_status fcm_fcoe_if_action(char *, char *);
+ 
+@@ -537,7 +537,7 @@ static void fcm_fc_event_handler(struct fc_nl_event *fc_event)
+ 
+ 		/* find real interface port and re-activate again */
+ 		p = fcm_find_fcoe_port(p->real_ifname, FCP_CFG_IFNAME);
+-		if (p)
++		if (p && p->last_action != FCP_DISABLE_IF)
+ 			fcp_set_next_action(p, FCP_ACTIVATE_IF);
+ 		break;
+ 	default:
+@@ -932,6 +932,7 @@ static void fcp_set_next_action(struct fcoe_port *p, enum fcp_action action)
+ 		switch (action) {
+ 		case FCP_CREATE_IF:
+ 		case FCP_ACTIVATE_IF:
++		case FCP_ENABLE_IF:
+ 			if (p->auto_vlan)
+ 				p->action = FCP_VLAN_DISC;
+ 			else
+@@ -1623,6 +1624,7 @@ static struct fcm_netif *fcm_netif_alloc(char *ifname)
+ 	if (ff) {
+ 		snprintf(ff->ifname, sizeof(ff->ifname), "%s", ifname);
+ 		ff->ff_operstate = IF_OPER_UNKNOWN;
++		ff->ff_enabled = 1;
+ 		TAILQ_INSERT_TAIL(&fcm_netif_head, ff, ff_list);
+ 	} else {
+ 		FCM_LOG_ERR(errno, "failed to allocate fcm_netif");
+@@ -2118,7 +2120,13 @@ static enum fcp_action validate_dcbd_info(struct fcm_netif *ff)
+ 		else
+ 			FCM_LOG_DEV_DBG(ff, "DCB is configured correctly\n");
+ 
+-		return FCP_ACTIVATE_IF;
++
++		if (ff->ff_enabled)
++			return FCP_ACTIVATE_IF;
++		else {
++			ff->ff_enabled = 1;
++			return FCP_ENABLE_IF;
++		}
+ 	}
+ 
+ 	/* check if dcb state qualifies to destroy the fcoe interface */
+@@ -2141,6 +2149,7 @@ static enum fcp_action validate_dcbd_info(struct fcm_netif *ff)
+ 				    ff->ff_app_info.u.appcfg,
+ 				    ff->ff_pfc_info.u.pfcup);
+ 
++		ff->ff_enabled = 0;
+ 		return FCP_DISABLE_IF;
+ 	}
+ 
+@@ -2564,7 +2573,7 @@ int fcm_start_vlan_disc(struct fcoe_port *p)
+  *         action = 2      Create the FCoE interface
+  *         action = 3      Reset the interface
+  */
+-static void fcm_fcoe_action(struct fcm_netif *ff, struct fcoe_port *p)
++static int fcm_fcoe_action(struct fcm_netif *ff, struct fcoe_port *p)
+ {
+ 	struct fcoe_port *vp;
+ 	char *ifname = p->ifname;
+@@ -2627,10 +2636,8 @@ static void fcm_fcoe_action(struct fcm_netif *ff, struct fcoe_port *p)
+ 	case FCP_RESET_IF:
+ 		FCM_LOG_DBG("OP: RESET %s\n", p->ifname);
+ 
+-		if (strlen(p->fchost) <= 0)  {
+-			fcm_cli_reply(p->sock_reply, ENOFCHOST);
+-			return;
+-		}
++		if (strlen(p->fchost) <= 0)
++			return ENOFCHOST;
+ 
+ 		sprintf(path, "%s/%s/issue_lip", SYSFS_FCHOST, p->fchost);
+ 		FCM_LOG_DBG("OP: RESET %s\n", path);
+@@ -2638,10 +2645,8 @@ static void fcm_fcoe_action(struct fcm_netif *ff, struct fcoe_port *p)
+ 		break;
+ 	case FCP_SCAN_IF:
+ 		FCM_LOG_DBG("OP: SCAN %s\n", p->ifname);
+-		if (strlen(p->fchost) <= 0)  {
+-			fcm_cli_reply(p->sock_reply, ENOFCHOST);
+-			return;
+-		}
++		if (strlen(p->fchost) <= 0)
++			return ENOFCHOST;
+ 
+ 		sprintf(path, "%s/%s/device/scsi_host/%s/scan",
+ 			SYSFS_FCHOST, p->fchost, p->fchost);
+@@ -2653,17 +2658,12 @@ static void fcm_fcoe_action(struct fcm_netif *ff, struct fcoe_port *p)
+ 		rc = fcm_start_vlan_disc(p);
+ 		break;
+ 	default:
+-		return;
++		return rc;
+ 		break;
+ 	}
+ 
+-	if (p->sock_reply) {
+-		fcm_cli_reply(p->sock_reply, rc);
+-		free(p->sock_reply);
+-		p->sock_reply = NULL;
+-	}
+-
+ 	p->last_action = p->action;
++	return rc;
+ }
+ 
+ /*
+@@ -2748,6 +2748,10 @@ static void fcm_netif_advance(struct fcm_netif *ff)
+ 			fcp_action_set(ff->ifname, FCP_DESTROY_IF);
+ 			fcm_dcbd_state_set(ff, FCD_INIT);
+ 			break;
++		case FCP_ENABLE_IF:
++			fcp_action_set(ff->ifname, FCP_ENABLE_IF);
++			fcm_dcbd_state_set(ff, FCD_INIT);
++			break;
+ 		case FCP_DISABLE_IF:
+ 			fcp_action_set(ff->ifname, FCP_DISABLE_IF);
+ 			fcm_dcbd_state_set(ff, FCD_INIT);
+@@ -2786,7 +2790,7 @@ static void fcm_handle_changes()
+ {
+ 	struct fcm_netif *ff;
+ 	struct fcoe_port *p;
+-	int i;
++	int i, rc;
+ 
+ 	/*
+ 	 * Perform pending actions (dcbd queries) on network interfaces.
+@@ -2802,19 +2806,25 @@ static void fcm_handle_changes()
+ 	while (p) {
+ 		ff = fcm_netif_lookup(p->real_ifname);
+ 		if (!ff) {
+-			if (p->sock_reply) {
+-				fcm_cli_reply(p->sock_reply, ENOETHDEV);
+-				free(p->sock_reply);
+-				p->sock_reply = NULL;
+-				p->action = FCP_WAIT;
+-			}
++			rc = ENOETHDEV;
++			p->action = FCP_WAIT;
+ 			goto next_port;
+ 		}
+ 
+-		fcm_fcoe_action(ff, p);
++		rc = fcm_fcoe_action(ff, p);
+ 
+-		fcp_set_next_action(p, FCP_WAIT);
+ next_port:
++		if (p->sock_reply) {
++			if (p->dcb_required && !ff->ff_enabled && rc == SUCCESS
++			    && p->action != FCP_DESTROY_IF) {
++				rc = EDCBNOTRDY;
++				p->fcoe_enable = 0;
++			}
++			fcm_cli_reply(p->sock_reply, rc);
++			free(p->sock_reply);
++			p->sock_reply = NULL;
++		}
++		fcp_set_next_action(p, FCP_WAIT);
+ 		p = p->next;
+ 	}
+ }
+@@ -3059,19 +3069,19 @@ static enum fcoe_status fcm_cli_destroy(char *ifname,
+ 			p->fcoe_enable = 0;
+ 
+ 			if (p->last_action == FCP_DESTROY_IF)
+-				return ENOACTION;
++				return ENOFCOECONN;
+ 
+ 			fcp_set_next_action(p, FCP_DESTROY_IF);
+ 			p->sock_reply = *r;
+ 			return SUCCESS;
+ 		} else {
+ 			/* no action needed */
+-			return ENOACTION;
++			return ENOFCOECONN;
+ 		}
+ 	}
+ 
+ 	FCM_LOG_ERR(errno, "%s is not in port list.\n", ifname);
+-	return EFAIL;
++	return ENOFCOECONN;
+ }
+ 
+ static enum fcoe_status fcm_cli_action(char *ifname, int cmd,
+diff --git a/include/fcoe_utils.h b/include/fcoe_utils.h
+index 46085be..d07a3e9 100644
+--- a/include/fcoe_utils.h
++++ b/include/fcoe_utils.h
+@@ -66,6 +66,7 @@ enum fcoe_status {
+ 	ENOETHDEV,    /* Not a valid Ethernet interface */
+ 	ENOMONCONN,   /* Not connected to fcoemon */
+ 	ECONNTMOUT,   /* Connection to fcoemon timed out */
++	EDCBNOTRDY,   /* DCB not ready while interface requires DCB */
+ 	EHBAAPIERR,   /* Error using HBAAPI/libhbalinux */
+ };
+ 

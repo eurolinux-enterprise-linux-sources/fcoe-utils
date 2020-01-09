@@ -1,6 +1,6 @@
 Name:           fcoe-utils
-Version:        1.0.22
-Release:        3%{?dist}
+Version:        1.0.24
+Release:        2%{?dist}
 Summary:        Fibre Channel over Ethernet utilities
 Group:          Applications/System
 License:        GPLv2
@@ -14,8 +14,8 @@ Patch0:         fcoe-utils-1.0.22-init.patch
 Patch1:         fcoe-utils-1.0.20-make.patch
 Patch2:         fcoe-utils-1.0.18-help.patch
 Patch3:         fcoe-utils-1.0.18-config.patch
-# Upstream patches
-Patch10:        fcoe-utils-1.0.22-debug-Add-date-and-ps-output-to-fcoedump.sh.patch
+# rhbz#867117
+Patch4:         fcoe-utils-1.0.24-fixes-misleading-operations-and-prints-while-DCB-not-ready.patch
 
 BuildRequires:      libtool automake autoconf
 BuildRequires:      lldpad-devel >= 0.9.43
@@ -39,13 +39,12 @@ lldpad
 
 %prep
 %setup -q
-# Upstream
-%patch10 -p1
 # RH-specific
 %patch0 -p1 -b .init
 %patch1 -p1 -b .make
 %patch2 -p1 -b .help
 %patch3 -p1 -b .config
+%patch4 -p1
 
 %build
 ./bootstrap.sh
@@ -115,6 +114,12 @@ fi
 
 
 %changelog
+* Thu Dec 06 2012 Petr Šabata <contyk@redhat.com> - 1.0.24-2
+- Fix fcoemon behavior with DCB unavailable (#867117, patchwork 2810)
+
+* Thu Aug 16 2012 Petr Šabata <contyk@redhat.com> - 1.0.24-1
+- Update to 1.0.24 (#819935, #826291)
+
 * Mon Apr 02 2012 Petr Šabata <contyk@redhat.com> - 1.0.22-3
 - Completely revert upstream initscript status() changes (#804936)
 

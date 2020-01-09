@@ -1,0 +1,27 @@
+This document explains how to build the Open-FCoE
+user space utilities. This includes fcoeadm, fcoemon and
+their corresponding manual pages.
+
+##
+# fcoe-utils
+############
+
+DEPENDENCIES
+
+* libhbalinux
+* lldpad v0.9.43 or greater (optional configure flag to build without)
+
+* autoconf
+* autotools
+* sysconftool
+* automake
+* libtool
+
+1) Bootstrap, configure, make and make install
+   # ./bootstrap.sh
+   Either execute the next line for System V init script install
+   # rpm --eval "%configure" | sh
+   or the following line to install systemd unit scripts
+   # rpm --eval "%configure --with-systemdsystemunitdir=/" | sh
+   # make
+   # make install

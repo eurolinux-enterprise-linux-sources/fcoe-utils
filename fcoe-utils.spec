@@ -5,7 +5,7 @@
 
 Name:               fcoe-utils
 Version:            1.0.32
-Release:            1%{?dist}
+Release:            2%{?dist}
 Summary:            Fibre Channel over Ethernet utilities
 Group:              Applications/System
 License:            GPLv2
@@ -15,6 +15,7 @@ Source1:            quickstart.txt
 Source2:            fcoe.service
 Source3:            fcoe.config
 Source4:            README.redhat
+Patch0:             0001-fcoemon-link-buffer-resize-fix.patch
 ExcludeArch:        ppc s390
 BuildRequires:      autoconf
 BuildRequires:      automake
@@ -87,6 +88,9 @@ sed -i -e 's/SUPPORTED_DRIVERS="libfc fcoe bnx2fc"/SUPPORTED_DRIVERS="libfc fcoe
 %{_libexecdir}/fcoe/
 
 %changelog
+* Fri Jan 25 2019 Chris Leech <cleech@redhat.com> - 1.0.32-2
+- 1656720 fcoemon fix ignored devices from recv buffer resize bug
+
 * Wed Feb 22 2017 Chris Leech <cleech@redhat.com> - 1.0.32-1
 - 1384707 fcoeadm --target segfaults if non-FCoE FC targets are present
 - 1321611 fcoemon should only try to connect to lldpad when required

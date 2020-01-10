@@ -5,7 +5,7 @@
 
 Name:               fcoe-utils
 Version:            1.0.31
-Release:            1.git%{checkout}%{?dist}
+Release:            1.git%{checkout}%{?dist}.1
 Summary:            Fibre Channel over Ethernet utilities
 Group:              Applications/System
 License:            GPLv2
@@ -20,6 +20,7 @@ ExcludeArch:        ppc s390
 Patch1:             fcoe-utils-v1.0.31-1-fcoemon.c-Add-a-check-to-verify-if-dcbd-is-to-be-ini.patch
 Patch2:             fcoe-utils-v1.0.31-2-fcoeadm-Fix-possible-buffer-overflows.patch
 Patch3:             fcoe-utils-v1.0.30-3-sanmac-isn-t-required.patch
+Patch4:             fcoe-utils-v1.0.31-9-fcoeadm-target-segfault-with-other-FC-storage-presen.patch
 BuildRequires:      autoconf
 BuildRequires:      automake
 BuildRequires:      libpciaccess-devel
@@ -94,6 +95,9 @@ sed -i -e 's/SUPPORTED_DRIVERS="libfc fcoe bnx2fc"/SUPPORTED_DRIVERS="libfc fcoe
 %{_libexecdir}/fcoe/
 
 %changelog
+* Fri Feb 24 2017 Chris Leech <cleech@redhat.com> - 1.0.31-1.git5dfd3e4.el7_3.1
+- 1426634 fix core dump when running fcoeadm -t with non-libfc FC/FCoE storage
+
 * Fri Aug 19 2016 Chris Leech <cleech@redhat.com> - 1.0.31-1.git5dfd3e4
 - 1274530 rebase to upstream 1.0.31+
 - no longer requires libhbaapi/libhbalinux

@@ -132,7 +132,7 @@ static void show_port_info(struct port_attributes *lp_info)
 	printf("        Port Name:         %s\n",
 		lp_info->port_name);
 
-	printf("        FabricName:        %s\n",
+	printf("        Fabric Name:        %s\n",
 		lp_info->fabric_name);
 
 	printf("        Speed:             %s\n",
@@ -267,13 +267,13 @@ static void show_full_lun_info(unsigned int hba, unsigned int port,
 	if (!port_attrs)
 		goto free_rport;
 
-	strncat(path, "/device/", sizeof(path));
+	strncat(path, "/device/", sizeof(path) - strlen(path) - 1);
 
 	sa_sys_read_line(path, "rev", rev, sizeof(rev));
 	sa_sys_read_line(path, "model", model, sizeof(model));
 	sa_sys_read_line(path, "vendor", vendor, sizeof(vendor));
 
-	strncat(path, "block", sizeof(path));
+	strncat(path, "block", sizeof(path) - strlen(path) - 1);
 
 	dir = opendir(path);
 	if (!dir)
@@ -349,7 +349,7 @@ static void show_short_lun_info(unsigned int hba, unsigned int port,
 	sa_sys_read_line(path, "model", model, sizeof(model));
 	sa_sys_read_line(path, "vendor", vendor, sizeof(vendor));
 
-	strncat(path, "block", sizeof(path));
+	strncat(path, "block", sizeof(path) - strlen(path) - 1);
 
 	dir = opendir(path);
 	if (!dir)
@@ -660,17 +660,19 @@ static char *get_ifname_from_rport(char *rport)
 
 	err = asprintf(&path, "%s/%s", "/sys/class/fc_remote_ports", rport);
 	if (err == -1)
-		return false;
+		return NULL;
 
 	ret = readlink(path, link, sizeof(link));
 	free(path);
 	if (ret == -1)
-		return false;
+		return NULL;
 
 	if (link[ret] != '\0')
 		link[ret] = '\0';
 
 	offs = strstr(link, "/net/");
+	if (!offs)
+		return NULL;
 
 	offs = offs + 5;
 
@@ -778,7 +780,7 @@ static int search_rports(struct dirent *dp, void *arg)
 	} else {
 		ifname = get_ifname_from_rport(rport);
 		if (!ifname)
-			return -ENOMEM;
+			return 0;
 		allocated = true;
 	}
 

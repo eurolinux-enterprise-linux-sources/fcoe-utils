@@ -25,6 +25,7 @@
 struct fcoe_config {
 	int debug;
 	int use_syslog;
+	int dcb_init;
 	struct fcoe_port *port;
 } fcoe_config;
 
@@ -67,7 +68,7 @@ enum fcm_dcbd_state {
    FCD_GET_PFC_CONFIG,  /* getting PFC configuration */
    FCD_GET_APP_CONFIG,  /* getting APP configuration */
    FCD_GET_PFC_OPER,    /* getting PFC operational mode */
-   FCD_GET_APP_OPER,    /* getting operational mode */
+   FCD_GET_APP_OPER,    /* getting AAP operational mode */
    FCD_GET_PEER,        /* getting peer configuration */
    FCD_DONE,            /* DCB exchanges complete */
    FCD_ERROR,           /* DCB error or port unknown by DCB */

@@ -122,13 +122,13 @@ fip_socket_add_addr(int s, int ifindex, bool add, const __u8 *mac, bool multi)
  * @ifindex: network interface index to send on
  * @add: 1 to add 0 to del
  */
-static int fip_socket_sanmac(int s, int ifindex, int add)
+static int fip_socket_sanmac(int s, int ifindex, unsigned char *mac, int add)
 {
 	unsigned char smac[ETHER_ADDR_LEN];
 
 	if (fip_get_sanmac(ifindex, smac)) {
 		FIP_LOG_DBG("%s: no sanmac, ifindex %d\n", __func__, ifindex);
-		return -ENXIO;
+		memcpy(smac, mac, ETHER_ADDR_LEN);
 	}
 
 	return fip_socket_add_addr(s, ifindex, add, smac, false);
@@ -200,7 +200,7 @@ static void drain_socket(int s)
  * @ifindex: ifindex of netdevice to bind to
  * @multi: Indication of any multicast address to bind to
  */
-int fip_socket(int ifindex, enum fip_multi multi)
+int fip_socket(int ifindex, unsigned char *mac, enum fip_multi multi)
 {
 	struct sockaddr_ll sa = {
 		.sll_family = AF_PACKET,
@@ -211,11 +211,14 @@ int fip_socket(int ifindex, enum fip_multi multi)
 	int rc;
 
 	s = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_FIP));
-	if (s < 0)
+	if (s < 0) {
+		FIP_LOG_ERR(errno, "Failed to open FIP socket.\n");
 		return s;
+	}
 
-	rc = fip_socket_sanmac(s, ifindex, 1);
-	if (rc < 0) {
+	rc = fip_socket_sanmac(s, ifindex, mac, 1);
+	if (rc < 0 && rc != -ENXIO) {
+		FIP_LOG_ERR(errno, "Failed to open SANMAC socket.\n");
 		close(s);
 		return rc;
 	}
@@ -224,6 +227,7 @@ int fip_socket(int ifindex, enum fip_multi multi)
 
 	rc = bind(s, (struct sockaddr *) &sa, sizeof(sa));
 	if (rc < 0) {
+		FIP_LOG_ERR(errno, "Bind failed.\n");
 		close(s);
 		return rc;
 	}

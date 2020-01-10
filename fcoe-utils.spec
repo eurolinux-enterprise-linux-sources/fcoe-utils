@@ -1,36 +1,28 @@
 # https://fedoraproject.org/wiki/Packaging:Guidelines#Compiler_flags
 %define _hardened_build 1
 
-%global checkout 5dfd3e4
+%global checkout f5cbb9a
 
 Name:               fcoe-utils
-Version:            1.0.31
-Release:            1.git%{checkout}%{?dist}.1
+Version:            1.0.32
+Release:            1%{?dist}
 Summary:            Fibre Channel over Ethernet utilities
 Group:              Applications/System
 License:            GPLv2
 URL:                http://www.open-fcoe.org
-# git://open-fcoe.org/fcoe/fcoe-utils.git
 Source0:            https://github.com/morbidrsa/fcoe-utils/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:            quickstart.txt
 Source2:            fcoe.service
 Source3:            fcoe.config
 Source4:            README.redhat
 ExcludeArch:        ppc s390
-Patch1:             fcoe-utils-v1.0.31-1-fcoemon.c-Add-a-check-to-verify-if-dcbd-is-to-be-ini.patch
-Patch2:             fcoe-utils-v1.0.31-2-fcoeadm-Fix-possible-buffer-overflows.patch
-Patch3:             fcoe-utils-v1.0.30-3-sanmac-isn-t-required.patch
-Patch4:             fcoe-utils-v1.0.31-9-fcoeadm-target-segfault-with-other-FC-storage-presen.patch
 BuildRequires:      autoconf
 BuildRequires:      automake
 BuildRequires:      libpciaccess-devel
-#BuildRequires:      libhbaapi-devel >= 2.2.9-6
-#BuildRequires:      libhbalinux-devel >= 1.0.17-1
 BuildRequires:      libtool
 BuildRequires:      lldpad-devel >= 0.9.43
 BuildRequires:      systemd
 Requires:           lldpad >= 0.9.43
-#Requires:           libhbalinux >= 1.0.16-4
 Requires:           iproute
 Requires:           device-mapper-multipath
 Requires(post):     systemd
@@ -95,8 +87,9 @@ sed -i -e 's/SUPPORTED_DRIVERS="libfc fcoe bnx2fc"/SUPPORTED_DRIVERS="libfc fcoe
 %{_libexecdir}/fcoe/
 
 %changelog
-* Fri Feb 24 2017 Chris Leech <cleech@redhat.com> - 1.0.31-1.git5dfd3e4.el7_3.1
-- 1426634 fix core dump when running fcoeadm -t with non-libfc FC/FCoE storage
+* Wed Feb 22 2017 Chris Leech <cleech@redhat.com> - 1.0.32-1
+- 1384707 fcoeadm --target segfaults if non-FCoE FC targets are present
+- 1321611 fcoemon should only try to connect to lldpad when required
 
 * Fri Aug 19 2016 Chris Leech <cleech@redhat.com> - 1.0.31-1.git5dfd3e4
 - 1274530 rebase to upstream 1.0.31+
